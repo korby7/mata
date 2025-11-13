@@ -43,21 +43,19 @@
 
         .header {
             background: rgba(0, 0, 0, 0.3);
-            padding: 15px 20px;
+            padding: 10px 15px;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .header h1 {
-            font-size: 24px;
-            font-weight: 500;
-        }
-
         .header-buttons {
             display: flex;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
         }
 
         .btn {
@@ -900,7 +898,6 @@
     </div>
 
     <div class="header">
-        <h1>SCOREKEEPER</h1>
         <div class="header-buttons">
             <div id="roomStatus" class="room-status" style="display: none;">
                 <div class="room-indicator"></div>
@@ -1073,9 +1070,17 @@
 
         // Room variables
         let currentRoomCode = null;
+        let isRoomHost = false;
         let syncInterval = null;
         let lastSyncTime = 0;
         const API_BASE = window.location.origin + '/api';
+
+        // Check if user can edit
+        function canEdit() {
+            // If not in a room, can edit
+            // If in a room, only host can edit
+            return !currentRoomCode || isRoomHost;
+        }
 
         // Save to localStorage
         function saveToLocalStorage() {
@@ -1084,12 +1089,13 @@
                 selectedPlayer: selectedPlayer,
                 selectedRow: selectedRow,
                 mataMultiplier: mataMultiplier,
-                roomCode: currentRoomCode
+                roomCode: currentRoomCode,
+                isRoomHost: isRoomHost
             };
             localStorage.setItem('scorekeeper_data', JSON.stringify(data));
 
-            // If in a room, sync to cloud
-            if (currentRoomCode) {
+            // If in a room AND is host, sync to cloud
+            if (currentRoomCode && isRoomHost) {
                 syncToRoom();
             }
         }
@@ -1105,6 +1111,7 @@
                     selectedRow = data.selectedRow ?? null;
                     mataMultiplier = data.mataMultiplier || 200;
                     currentRoomCode = data.roomCode || null;
+                    isRoomHost = data.isRoomHost || false;
                     return true;
                 } catch (e) {
                     console.error('Error loading saved data:', e);
@@ -1116,6 +1123,10 @@
 
         // Reset all data
         function resetData() {
+            if (!canEdit()) {
+                alert('Hanya HOST yang bisa reset data!');
+                return;
+            }
             if (confirm('Apakah Anda yakin ingin mereset semua skor? Nama pemain akan tetap!')) {
                 // Keep player names, only reset scores
                 players.forEach(player => {
@@ -1216,6 +1227,7 @@
         }
 
         function addRow() {
+            if (!canEdit()) return;
             addRowSilent();
             saveToLocalStorage();
             render();
@@ -1228,6 +1240,7 @@
         }
 
         function removeRow() {
+            if (!canEdit()) return;
             // Check if there are any players
             if (players.length === 0) {
                 alert('No players available!');
@@ -1269,6 +1282,7 @@
         }
 
         function inputNumber(num) {
+            if (!canEdit()) return;
             if (selectedPlayer === null || selectedRow === null) return;
 
             currentInput += num.toString();
@@ -1283,6 +1297,7 @@
         }
 
         function toggleSign() {
+            if (!canEdit()) return;
             isNegative = !isNegative;
 
             // Update current cell with new sign
@@ -1296,6 +1311,7 @@
         }
 
         function clearInput() {
+            if (!canEdit()) return;
             currentInput = currentInput.slice(0, -1);
             if (currentInput === '') {
                 currentInput = '';
@@ -1313,6 +1329,7 @@
         }
 
         function insertShortcut(value) {
+            if (!canEdit()) return;
             if (selectedPlayer === null || selectedRow === null) return;
 
             currentInput = Math.abs(value).toString();
@@ -1785,6 +1802,7 @@
 
                 const data = await response.json();
                 currentRoomCode = data.roomCode;
+                isRoomHost = true;
 
                 document.getElementById('roomStatus').style.display = 'flex';
                 document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
@@ -1795,7 +1813,7 @@
                 showRoomMenuView();
                 startRoomSync();
 
-                alert(`Room berhasil dibuat!\n\nKode Room: ${currentRoomCode}\n\nBagikan kode ini ke pemain lain.`);
+                alert(`Room berhasil dibuat!\n\nKode Room: ${currentRoomCode}\n\nBagikan kode ini ke pemain lain.\n\nAnda adalah HOST - hanya Anda yang bisa edit skor.`);
             } catch (error) {
                 console.error('Create room error:', error);
                 alert('Gagal membuat room. Pastikan Anda sudah deploy Cloudflare Worker.');
@@ -1826,6 +1844,8 @@
                 const data = await response.json();
                 players = data.players;
                 currentRoomCode = roomCode;
+                isRoomHost = false;
+                lastSyncTime = data.lastUpdate || Date.now();
 
                 document.getElementById('roomStatus').style.display = 'flex';
                 document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
@@ -1837,7 +1857,7 @@
                 closeRoomModal();
                 startRoomSync();
 
-                alert(`Berhasil join room: ${roomCode}`);
+                alert(`Berhasil join room: ${roomCode}\n\nAnda adalah GUEST - hanya bisa lihat skor (read-only).`);
             } catch (error) {
                 console.error('Join room error:', error);
                 alert('Gagal join room. Coba lagi nanti.');
@@ -1848,6 +1868,7 @@
             if (confirm('Yakin ingin keluar dari room? Data lokal Anda akan tetap tersimpan.')) {
                 stopRoomSync();
                 currentRoomCode = null;
+                isRoomHost = false;
 
                 document.getElementById('roomStatus').style.display = 'none';
                 document.getElementById('currentRoomInfo').style.display = 'none';
@@ -1906,6 +1927,18 @@
                 if (data.lastUpdate && data.lastUpdate > lastSyncTime) {
                     players = data.players;
                     lastSyncTime = data.lastUpdate;
+
+                    // Save to localStorage but don't trigger sync back (avoid loop)
+                    const saveData = {
+                        players: players,
+                        selectedPlayer: selectedPlayer,
+                        selectedRow: selectedRow,
+                        mataMultiplier: mataMultiplier,
+                        roomCode: currentRoomCode,
+                        isRoomHost: isRoomHost
+                    };
+                    localStorage.setItem('scorekeeper_data', JSON.stringify(saveData));
+
                     render();
                 }
             } catch (error) {
