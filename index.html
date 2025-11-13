@@ -1895,13 +1895,21 @@
             if (!currentRoomCode) return;
 
             try {
-                await fetch(`${API_BASE}/room/${currentRoomCode}`, {
+                console.log('[SYNC TO] Saving to room:', currentRoomCode, 'Players:', players.length);
+                const response = await fetch(`${API_BASE}/room/${currentRoomCode}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ players: players })
                 });
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('[SYNC TO] ✅ Saved successfully. LastUpdate:', data.lastUpdate);
+                    lastSyncTime = data.lastUpdate;
+                } else {
+                    console.error('[SYNC TO] ❌ Failed:', response.status);
+                }
             } catch (error) {
-                console.error('Sync to room error:', error);
+                console.error('[SYNC TO] ❌ Error:', error);
             }
         }
 
@@ -1910,16 +1918,25 @@
 
             // Don't sync if user is currently typing to prevent input reset
             // Unless it's a forced manual refresh
-            if (isUserTyping && !force) return;
+            if (isUserTyping && !force) {
+                console.log('[SYNC FROM] ⏸️ Skipped (user typing)');
+                return;
+            }
 
             try {
+                console.log('[SYNC FROM] Fetching from room:', currentRoomCode);
                 const response = await fetch(`${API_BASE}/room/${currentRoomCode}`);
 
-                if (!response.ok) return;
+                if (!response.ok) {
+                    console.error('[SYNC FROM] ❌ Failed:', response.status);
+                    return;
+                }
 
                 const data = await response.json();
+                console.log('[SYNC FROM] Remote lastUpdate:', data.lastUpdate, 'Local lastSync:', lastSyncTime);
 
                 if (data.lastUpdate && data.lastUpdate > lastSyncTime) {
+                    console.log('[SYNC FROM] ✅ Updating data. Players:', data.players.length);
                     players = data.players;
                     lastSyncTime = data.lastUpdate;
 
@@ -1934,9 +1951,11 @@
                     localStorage.setItem('scorekeeper_data', JSON.stringify(saveData));
 
                     render();
+                } else {
+                    console.log('[SYNC FROM] ⏭️ No new updates');
                 }
             } catch (error) {
-                console.error('Sync from room error:', error);
+                console.error('[SYNC FROM] ❌ Error:', error);
             }
         }
 
