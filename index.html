@@ -904,6 +904,7 @@
                 <span>Room: <span class="room-code" id="roomCodeDisplay"></span></span>
             </div>
             <button class="btn btn-secondary" onclick="showRoomModal()">🔗 Room</button>
+            <button id="refreshBtn" class="btn btn-secondary" onclick="manualRefresh()" style="display: none;">🔄 Sync</button>
             <button class="btn btn-secondary" onclick="resetData()">Reset</button>
             <button class="btn btn-primary" onclick="showMataCalculation()">Perhitungan Mata</button>
             <span class="row-indicator" id="rowIndicator">Rows: 0</span>
@@ -1797,12 +1798,13 @@
                 document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
                 document.getElementById('currentRoomCode').textContent = currentRoomCode;
                 document.getElementById('currentRoomInfo').style.display = 'block';
+                document.getElementById('refreshBtn').style.display = 'inline-block';
 
                 saveToLocalStorage();
                 showRoomMenuView();
                 startRoomSync();
 
-                alert(`Room berhasil dibuat!\n\nKode Room: ${currentRoomCode}\n\nBagikan kode ini ke pemain lain.\n\nSemua orang bisa edit dan skor akan sync otomatis!`);
+                alert(`Room berhasil dibuat!\n\nKode Room: ${currentRoomCode}\n\nBagikan kode ini ke pemain lain.\n\nKlik tombol 🔄 Sync untuk update manual kapanpun!`);
             } catch (error) {
                 console.error('Create room error:', error);
                 alert('Gagal membuat room. Pastikan Anda sudah deploy Cloudflare Worker.');
@@ -1839,13 +1841,14 @@
                 document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
                 document.getElementById('currentRoomCode').textContent = currentRoomCode;
                 document.getElementById('currentRoomInfo').style.display = 'block';
+                document.getElementById('refreshBtn').style.display = 'inline-block';
 
                 saveToLocalStorage();
                 render();
                 closeRoomModal();
                 startRoomSync();
 
-                alert(`Berhasil join room: ${roomCode}\n\nSemua orang bisa edit dan skor akan sync otomatis!`);
+                alert(`Berhasil join room: ${roomCode}\n\nKlik tombol 🔄 Sync untuk update manual kapanpun!`);
             } catch (error) {
                 console.error('Join room error:', error);
                 alert('Gagal join room. Coba lagi nanti.');
@@ -1859,6 +1862,7 @@
 
                 document.getElementById('roomStatus').style.display = 'none';
                 document.getElementById('currentRoomInfo').style.display = 'none';
+                document.getElementById('refreshBtn').style.display = 'none';
 
                 saveToLocalStorage();
                 closeRoomModal();
@@ -1901,11 +1905,12 @@
             }
         }
 
-        async function syncFromRoom() {
+        async function syncFromRoom(force = false) {
             if (!currentRoomCode) return;
 
             // Don't sync if user is currently typing to prevent input reset
-            if (isUserTyping) return;
+            // Unless it's a forced manual refresh
+            if (isUserTyping && !force) return;
 
             try {
                 const response = await fetch(`${API_BASE}/room/${currentRoomCode}`);
@@ -1967,8 +1972,25 @@
             if (currentRoomCode) {
                 document.getElementById('roomStatus').style.display = 'flex';
                 document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
+                document.getElementById('refreshBtn').style.display = 'inline-block';
                 startRoomSync();
+            } else {
+                document.getElementById('refreshBtn').style.display = 'none';
             }
+        }
+
+        async function manualRefresh() {
+            if (!currentRoomCode) return;
+
+            const btn = document.getElementById('refreshBtn');
+            btn.disabled = true;
+            btn.textContent = '⏳ Syncing...';
+
+            // Force sync even if user is typing
+            await syncFromRoom(true);
+
+            btn.disabled = false;
+            btn.textContent = '🔄 Sync';
         }
 
         // Initialize the app
