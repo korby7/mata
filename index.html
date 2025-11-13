@@ -1075,10 +1075,26 @@
         let lastSyncTime = 0;
         let isUserTyping = false;
         let typingTimeout = null;
+        let lastActivityTime = Date.now();
+        let currentSyncSpeed = 1000; // Start with fast polling
+        const FAST_SYNC = 1000; // 1 second when active
+        const SLOW_SYNC = 5000; // 5 seconds when idle
+        const IDLE_THRESHOLD = 10000; // 10 seconds of no activity = idle
         const API_BASE = window.location.origin + '/api';
+
+        // Mark user activity for smart polling
+        function markActivity() {
+            lastActivityTime = Date.now();
+            if (currentSyncSpeed !== FAST_SYNC) {
+                console.log('[SMART SYNC] 🏃 Switching to fast polling (1s)');
+                currentSyncSpeed = FAST_SYNC;
+                restartRoomSync();
+            }
+        }
 
         // Save to localStorage
         function saveToLocalStorage() {
+            markActivity(); // Mark activity when saving
             const data = {
                 players: players,
                 selectedPlayer: selectedPlayer,
@@ -1961,9 +1977,24 @@
 
         function startRoomSync() {
             if (syncInterval) return;
+            console.log('[SMART SYNC] ▶️ Starting sync with interval:', currentSyncSpeed + 'ms');
             syncInterval = setInterval(() => {
+                // Check if we should switch to slow polling
+                const timeSinceActivity = Date.now() - lastActivityTime;
+                if (timeSinceActivity > IDLE_THRESHOLD && currentSyncSpeed === FAST_SYNC) {
+                    console.log('[SMART SYNC] 🐌 Switching to slow polling (5s) - idle for', Math.round(timeSinceActivity/1000) + 's');
+                    currentSyncSpeed = SLOW_SYNC;
+                    restartRoomSync();
+                    return;
+                }
+
                 syncFromRoom();
-            }, 1000); // Sync every 1 second for near real-time updates
+            }, currentSyncSpeed);
+        }
+
+        function restartRoomSync() {
+            stopRoomSync();
+            startRoomSync();
         }
 
         function stopRoomSync() {
