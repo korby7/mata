@@ -1072,6 +1072,8 @@
         let currentRoomCode = null;
         let syncInterval = null;
         let lastSyncTime = 0;
+        let isUserTyping = false;
+        let typingTimeout = null;
         const API_BASE = window.location.origin + '/api';
 
         // Save to localStorage
@@ -1267,6 +1269,13 @@
 
         function inputNumber(num) {
             if (selectedPlayer === null || selectedRow === null) return;
+
+            // Mark user as typing to prevent sync overwrite
+            isUserTyping = true;
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => {
+                isUserTyping = false;
+            }, 2000);
 
             currentInput += num.toString();
 
@@ -1894,6 +1903,9 @@
 
         async function syncFromRoom() {
             if (!currentRoomCode) return;
+
+            // Don't sync if user is currently typing to prevent input reset
+            if (isUserTyping) return;
 
             try {
                 const response = await fetch(`${API_BASE}/room/${currentRoomCode}`);
