@@ -1,0 +1,1973 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <style>
+        * {
+            touch-action: manipulation;
+        }
+    </style>
+    <title>ScoreKeeper</title>
+
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ScoreKeeper">
+    <meta name="theme-color" content="#0f3460">
+    <meta name="description" content="Score tracking app for games">
+
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192x192.png">
+    <link rel="apple-touch-icon" href="icon-180x180.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f3460 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 500;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #4a9eff;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a8eef;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .row-indicator {
+            padding: 8px 16px;
+            background: rgba(74, 158, 255, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4a9eff;
+            display: inline-block;
+        }
+
+        .container {
+            padding: 20px;
+            padding-bottom: 0px;
+            max-width: 100%;
+            overflow-x: auto;
+            height: calc(100vh - 280px);
+            overflow-y: auto;
+        }
+
+        .score-table {
+            display: flex;
+            gap: 10px;
+            min-width: min-content;
+            margin-bottom: 20px;
+        }
+
+        .player-column {
+            flex: 1;
+            min-width: 120px;
+            max-width: 200px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 20px;
+            padding: 10px;
+        }
+
+        .player-header {
+            text-align: center;
+            margin-bottom: 5px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            padding: 5px;
+            margin: -10px -10px 5px -10px;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .player-name {
+            font-size: 14px;
+            font-weight: 600;
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            border: none;
+            color: white;
+            text-align: center;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .player-name:focus {
+            outline: 2px solid #4a9eff;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .scores-list {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-bottom: 5px;
+        }
+
+        .score-cell {
+            padding: 4px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            text-align: center;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 20px;
+        }
+
+        .score-cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .score-cell.active {
+            background: rgba(74, 158, 255, 0.3);
+            box-shadow: 0 0 0 2px #4a9eff;
+        }
+
+        .total-score {
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .total-score:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.02);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+
+        .total-scores {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .total-score-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 80px;
+        }
+
+        .total-score-item:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .total-score-name {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-bottom: 4px;
+        }
+
+        .total-score-value {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .shortcuts {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .shortcut-btn {
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .shortcut-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .key-btn {
+            padding: 12px;
+            background: linear-gradient(135deg, #4a9eff 0%, #3a7ecf 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .key-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(74, 158, 255, 0.4);
+        }
+
+        .key-btn:active {
+            transform: translateY(0);
+        }
+
+        .key-btn.special {
+            background: linear-gradient(135deg, #27231f 0%, #656565 100%);
+        }
+
+        .key-btn.red {
+            background: linear-gradient(135deg, #e20000 0%, #df5325 100%);
+        }
+
+        .key-btn.green {
+            background: linear-gradient(135deg, #1f9629 0%, #003b02 100%);
+        }
+
+        .key-btn.action {
+            background: linear-gradient(135deg, #ad670a 0%, #5b2c00 100%);
+        }
+
+        .key-btn.arrow {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .shortcut-btn.negative {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+        }
+
+        .bottom-spacer {
+            height: 30px;
+            background: transparent;
+        }
+
+        .install-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #4a9eff 0%, #3a8eef 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1500;
+            display: none;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        .install-banner.show {
+            display: block;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        .install-banner-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .install-banner-icon {
+            font-size: 40px;
+            flex-shrink: 0;
+        }
+
+        .install-banner-text {
+            flex: 1;
+        }
+
+        .install-banner-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .install-banner-desc {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+
+        .install-banner-buttons {
+            display: flex;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .install-banner-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .install-banner-btn.primary {
+            background: white;
+            color: #4a9eff;
+        }
+
+        .install-banner-btn.primary:hover {
+            background: #f0f0f0;
+        }
+
+        .install-banner-btn.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .install-banner-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .install-banner-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.7;
+            flex-shrink: 0;
+        }
+
+        .install-banner-close:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .install-banner {
+                padding: 12px 15px;
+            }
+
+            .install-banner-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .install-banner-icon {
+                font-size: 32px;
+            }
+
+            .install-banner-title {
+                font-size: 14px;
+            }
+
+            .install-banner-desc {
+                font-size: 12px;
+            }
+
+            .install-banner-buttons {
+                width: 100%;
+            }
+
+            .install-banner-btn {
+                flex: 1;
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+
+        .room-status {
+            background: rgba(74, 158, 255, 0.2);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .room-code {
+            font-weight: 600;
+            color: #4a9eff;
+            font-size: 14px;
+        }
+
+        .room-indicator {
+            width: 8px;
+            height: 8px;
+            background: #4ade80;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .room-modal-input {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            text-align: center;
+            border: 2px solid rgba(74, 158, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 8px;
+            font-weight: 600;
+            margin: 20px 0;
+        }
+
+        .room-modal-input:focus {
+            outline: none;
+            border-color: #4a9eff;
+        }
+
+        .room-modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .room-modal-buttons button {
+            flex: 1;
+        }
+
+        .room-info {
+            background: rgba(74, 158, 255, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .room-info-code {
+            font-size: 32px;
+            font-weight: 700;
+            color: #4a9eff;
+            letter-spacing: 12px;
+            margin: 10px 0;
+        }
+
+        .room-info-text {
+            font-size: 13px;
+            opacity: 0.8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            padding: 30px;
+            border-radius: 15px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .leaderboard-item.first {
+            background: linear-gradient(135deg, #ffd700 20%, #ffed4e 100%);
+            color: #000;
+        }
+
+        .leaderboard-item.second {
+            background: linear-gradient(135deg, #c0c0c0 20%, #e8e8e8 100%);
+            color: #000;
+        }
+
+        .leaderboard-item.third {
+            background: linear-gradient(135deg, #cd7f32 20%, #e8a060 100%);
+            color: #000;
+        }
+
+        .rank {
+            font-weight: 700;
+            font-size: 20px;
+            margin-right: 15px;
+        }
+
+        .player-info {
+            flex: 1;
+        }
+
+        .player-score {
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .add-player-btn {
+            width: 120px;
+            min-width: 120px;
+            max-width: 200px;
+            background: rgba(74, 158, 255, 0.2);
+            border: 2px dashed #4a9eff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-player-btn:hover {
+            background: rgba(74, 158, 255, 0.3);
+        }
+
+        .add-player-btn span {
+            font-size: 48px;
+            color: #4a9eff;
+        }
+
+
+        @media (max-width: 1024px) {
+            .container {
+                padding: 15px;
+                padding-bottom: 380px;
+            }
+
+            .score-table {
+                gap: 8px;
+            }
+
+            .player-column {
+                min-width: 100px;
+            }
+
+            .add-player-btn {
+                width: 100px;
+                min-width: 100px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .header-buttons {
+                gap: 6px;
+            }
+
+            .btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .row-indicator {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+                padding-bottom: 360px;
+            }
+
+            .score-table {
+                gap: 6px;
+            }
+
+            .player-column {
+                min-width: 80px;
+                padding: 8px;
+            }
+
+            .add-player-btn {
+                width: 80px;
+                min-width: 80px;
+            }
+
+            .player-name {
+                font-size: 14px;
+                padding: 6px;
+            }
+
+            .score-cell {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            .total-score {
+                padding: 10px;
+                font-size: 16px;
+            }
+
+            .header {
+                padding: 12px 15px;
+            }
+
+            .header h1 {
+                font-size: 18px;
+            }
+
+            .header-buttons {
+                gap: 5px;
+            }
+
+            .btn {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+
+            .control-buttons {
+                gap: 6px;
+                margin-bottom: 8px;
+            }
+
+            .shortcuts {
+                gap: 4px;
+                margin-bottom: 8px;
+            }
+
+            .shortcut-btn {
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            .keypad {
+                grid-template-columns: repeat(7, 1fr);
+                gap: 4px;
+            }
+
+            .key-btn {
+                padding: 10px 6px;
+                font-size: 13px;
+            }
+
+            .controls {
+                padding: 10px;
+            }
+
+            .row-indicator {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 8px;
+                padding-bottom: 340px;
+            }
+
+            .score-table {
+                gap: 5px;
+            }
+
+            .player-column {
+                min-width: 70px;
+                padding: 6px;
+            }
+
+            .add-player-btn {
+                width: 70px;
+                min-width: 70px;
+            }
+
+            .player-name {
+                font-size: 12px;
+                padding: 5px;
+            }
+
+            .score-cell {
+                padding: 6px;
+                font-size: 12px;
+            }
+
+            .total-score {
+                padding: 8px;
+                font-size: 14px;
+            }
+
+            .header {
+                padding: 10px;
+            }
+
+            .header h1 {
+                font-size: 16px;
+            }
+
+            .header-buttons {
+                gap: 4px;
+            }
+
+            .btn {
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+
+            .control-buttons {
+                gap: 5px;
+            }
+
+            .shortcuts {
+                gap: 3px;
+            }
+
+            .shortcut-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .keypad {
+                gap: 3px;
+            }
+
+            .key-btn {
+                padding: 8px 4px;
+                font-size: 12px;
+            }
+
+            .controls {
+                padding: 8px;
+            }
+
+            .row-indicator {
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Install Banner -->
+    <div class="install-banner" id="installBanner">
+        <div class="install-banner-content">
+            <div class="install-banner-icon">📱</div>
+            <div class="install-banner-text">
+                <div class="install-banner-title" id="installTitle">Install ScoreKeeper</div>
+                <div class="install-banner-desc" id="installDesc">Add to Home Screen for quick access and offline use</div>
+            </div>
+            <div class="install-banner-buttons">
+                <button class="install-banner-btn primary" onclick="showInstallInstructions()" id="installButton">How to Install</button>
+                <button class="install-banner-close" onclick="dismissInstallBanner()">&times;</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>SCOREKEEPER</h1>
+        <div class="header-buttons">
+            <div id="roomStatus" class="room-status" style="display: none;">
+                <div class="room-indicator"></div>
+                <span>Room: <span class="room-code" id="roomCodeDisplay"></span></span>
+            </div>
+            <button class="btn btn-secondary" onclick="showRoomModal()">🔗 Room</button>
+            <button class="btn btn-secondary" onclick="resetData()">Reset</button>
+            <button class="btn btn-primary" onclick="showMataCalculation()">Perhitungan Mata</button>
+            <span class="row-indicator" id="rowIndicator">Rows: 0</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="score-table" id="scoreTable">
+            <!-- Player columns will be added here -->
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="total-scores" id="totalScores">
+            <!-- Total scores will be displayed here -->
+        </div>
+
+        <div class="shortcuts">
+            <button class="shortcut-btn" onclick="insertShortcut(14)">14</button>
+            <button class="shortcut-btn" onclick="insertShortcut(16)">16</button>
+            <button class="shortcut-btn" onclick="insertShortcut(18)">18</button>
+            <button class="shortcut-btn" onclick="insertShortcut(30)">30</button>
+            <button class="shortcut-btn" onclick="insertShortcut(33)">33</button>
+            <button class="shortcut-btn" onclick="insertShortcut(36)">36</button>
+            <button class="shortcut-btn" onclick="insertShortcut(52)">52</button>
+        </div>
+
+        <div class="shortcuts">
+            <button class="shortcut-btn negative" onclick="insertShortcut(-10)">-10</button>
+            <button class="shortcut-btn negative" onclick="insertShortcut(-20)">-20</button>
+            <button class="shortcut-btn negative" onclick="insertShortcut(-30)">-30</button>
+            <button class="shortcut-btn negative" onclick="insertShortcut(-40)">-40</button>
+            <button class="shortcut-btn negative" onclick="insertShortcut(-50)">-50</button>
+            <button class="shortcut-btn negative" onclick="insertShortcut(-100)">-100</button>
+            <button class="key-btn arrow" onclick="moveRight()">Next →</button>
+        </div>
+
+        <div class="keypad">
+            <button class="key-btn" onclick="inputNumber(1)">1</button>
+            <button class="key-btn" onclick="inputNumber(2)">2</button>
+            <button class="key-btn" onclick="inputNumber(3)">3</button>
+            <button class="key-btn" onclick="inputNumber(4)">4</button>
+            <button class="key-btn" onclick="inputNumber(5)">5</button>
+            <button class="key-btn red" onclick="removeRow()">-Row</button>
+            <button class="key-btn green" onclick="addRow()">+Row</button>
+            <button class="key-btn" onclick="inputNumber(6)">6</button>
+            <button class="key-btn" onclick="inputNumber(7)">7</button>
+            <button class="key-btn" onclick="inputNumber(8)">8</button>
+            <button class="key-btn" onclick="inputNumber(9)">9</button>
+            <button class="key-btn" onclick="inputNumber(0)">0</button>
+            <button class="key-btn special" onclick="toggleSign()">+/-</button>
+            <button class="key-btn action" onclick="clearInput()">⌫</button>
+        </div>
+
+        <div class="bottom-spacer"></div>
+    </div>
+    <!-- Leaderboard Modal -->
+    <div class="modal" id="leaderboardModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Leaderboard</h2>
+                <button class="close-btn" onclick="closeLeaderboard()">&times;</button>
+            </div>
+            <div id="leaderboardContent"></div>
+        </div>
+    </div>
+
+    <!-- Install Instructions Modal -->
+    <div class="modal" id="installModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="installModalTitle">How to Install</h2>
+                <button class="close-btn" onclick="closeInstallModal()">&times;</button>
+            </div>
+            <div id="installInstructions" style="line-height: 1.6;">
+                <!-- Instructions will be inserted here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Room Modal -->
+    <div class="modal" id="roomModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Room Sharing</h2>
+                <button class="close-btn" onclick="closeRoomModal()">&times;</button>
+            </div>
+
+            <div id="roomModalContent">
+                <!-- Default: Show Create/Join options -->
+                <div id="roomMenuView">
+                    <p style="margin-bottom: 20px; opacity: 0.8;">Bagikan skor dengan pemain lain secara real-time</p>
+                    <div class="room-modal-buttons">
+                        <button class="btn btn-primary" onclick="createRoom()" style="width: 100%; padding: 15px; font-size: 16px;">
+                            ➕ Buat Room Baru
+                        </button>
+                    </div>
+                    <div class="room-modal-buttons">
+                        <button class="btn btn-secondary" onclick="showJoinRoomView()" style="width: 100%; padding: 15px; font-size: 16px;">
+                            🔑 Join Room
+                        </button>
+                    </div>
+                    <div id="currentRoomInfo" style="display: none; margin-top: 20px;">
+                        <div class="room-info">
+                            <p class="room-info-text">Kode Room Aktif:</p>
+                            <div class="room-info-code" id="currentRoomCode"></div>
+                            <button class="btn btn-primary" onclick="shareRoom()" style="margin: 10px 5px;">
+                                📋 Copy Link
+                            </button>
+                            <button class="btn btn-secondary" onclick="leaveRoom()" style="margin: 10px 5px;">
+                                🚪 Keluar Room
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Join Room View -->
+                <div id="joinRoomView" style="display: none;">
+                    <p style="margin-bottom: 15px; opacity: 0.8;">Masukkan kode room 4 huruf:</p>
+                    <input
+                        type="text"
+                        id="roomCodeInput"
+                        class="room-modal-input"
+                        maxlength="4"
+                        placeholder="ABCD"
+                        oninput="this.value = this.value.toUpperCase()"
+                    />
+                    <div class="room-modal-buttons">
+                        <button class="btn btn-secondary" onclick="showRoomMenuView()">Kembali</button>
+                        <button class="btn btn-primary" onclick="joinRoom()">Join Room</button>
+                    </div>
+                </div>
+
+                <!-- Creating Room View -->
+                <div id="creatingRoomView" style="display: none; text-align: center; padding: 20px;">
+                    <p style="opacity: 0.8;">Membuat room...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mata Calculation Modal -->
+    <div class="modal" id="mataModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Perhitungan Mata</h2>
+                <button class="close-btn" onclick="closeMataCalculation()">&times;</button>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="font-size: 14px; margin-right: 10px;">Perhitungan Mata:</label>
+                <input type="number" id="mataMultiplier" value="200" style="width: 100px; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.3); background: rgba(18, 3, 3, 0.1); color: white; text-align: center; font-size: 16px; font-weight: 600;" onchange="updateMataCalculation()">
+            </div>
+            <div id="mataContent"></div>
+        </div>
+    </div>
+
+    <script>
+        let players = [];
+        let currentInput = '';
+        let isNegative = false;
+        let selectedPlayer = null;
+        let selectedRow = null;
+        let mataMultiplier = 200;
+
+        // Room variables
+        let currentRoomCode = null;
+        let syncInterval = null;
+        let lastSyncTime = 0;
+        const API_BASE = window.location.origin + '/api';
+
+        // Save to localStorage
+        function saveToLocalStorage() {
+            const data = {
+                players: players,
+                selectedPlayer: selectedPlayer,
+                selectedRow: selectedRow,
+                mataMultiplier: mataMultiplier,
+                roomCode: currentRoomCode
+            };
+            localStorage.setItem('scorekeeper_data', JSON.stringify(data));
+
+            // If in a room, sync to cloud
+            if (currentRoomCode) {
+                syncToRoom();
+            }
+        }
+
+        // Load from localStorage
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('scorekeeper_data');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    players = data.players || [];
+                    selectedPlayer = data.selectedPlayer ?? null;
+                    selectedRow = data.selectedRow ?? null;
+                    mataMultiplier = data.mataMultiplier || 200;
+                    currentRoomCode = data.roomCode || null;
+                    return true;
+                } catch (e) {
+                    console.error('Error loading saved data:', e);
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        // Reset all data
+        function resetData() {
+            if (confirm('Apakah Anda yakin ingin mereset semua skor? Nama pemain akan tetap!')) {
+                // Keep player names, only reset scores
+                players.forEach(player => {
+                    player.scores = [];
+                    // Add initial 25 rows with 0 score
+                    for (let i = 0; i < 25; i++) {
+                        player.scores.push(0);
+                    }
+                });
+
+                selectedPlayer = 0;
+                selectedRow = 0;
+                currentInput = '';
+                isNegative = false;
+
+                saveToLocalStorage();
+                render();
+            }
+        }
+
+        // Initialize with 4 default players
+        function init() {
+            // Try to load saved data
+            const loaded = loadFromLocalStorage();
+
+            console.log('Loaded from storage:', loaded);
+            console.log('Players length:', players.length);
+            console.log('Rows length:', players.length > 0 ? players[0].scores.length : 0);
+
+            if (!loaded || players.length === 0) {
+                // If no saved data, create default players
+                console.log('Creating new default data with 25 rows');
+                players = [];
+                players.push({ name: 'Player 1', scores: [] });
+                players.push({ name: 'Player 2', scores: [] });
+                players.push({ name: 'Player 3', scores: [] });
+                players.push({ name: 'Player 4', scores: [] });
+
+                // Add initial rows
+                for (let i = 0; i < 25; i++) {
+                    players.forEach(player => {
+                        player.scores.push(0);
+                    });
+                }
+
+                selectedPlayer = 0;
+                selectedRow = 0;
+                console.log('After init - Rows:', players[0].scores.length);
+                saveToLocalStorage();
+            } else {
+                // Check if loaded data has enough rows, if not add more to reach 25
+                const currentRows = players[0]?.scores?.length || 0;
+                if (currentRows < 25) {
+                    console.log(`Only ${currentRows} rows found, adding ${25 - currentRows} more rows`);
+                    const rowsToAdd = 25 - currentRows;
+                    for (let i = 0; i < rowsToAdd; i++) {
+                        players.forEach(player => {
+                            player.scores.push(0);
+                        });
+                    }
+                    saveToLocalStorage();
+                }
+            }
+
+            render();
+        }
+
+        function addPlayer(name = '') {
+            if (players.length >= 4) {
+                alert('Maximum 4 players allowed!');
+                return;
+            }
+
+            const playerName = name || `Player ${players.length + 1}`;
+            players.push({
+                name: playerName,
+                scores: []
+            });
+
+            saveToLocalStorage();
+            render();
+        }
+
+        function removePlayer(index) {
+            if (players.length <= 1) {
+                alert('Must have at least one player!');
+                return;
+            }
+
+            if (confirm(`Remove ${players[index].name}?`)) {
+                players.splice(index, 1);
+                if (selectedPlayer >= players.length) {
+                    selectedPlayer = players.length - 1;
+                }
+                saveToLocalStorage();
+                render();
+            }
+        }
+
+        function addRow() {
+            addRowSilent();
+            saveToLocalStorage();
+            render();
+        }
+
+        function addRowSilent() {
+            players.forEach(player => {
+                player.scores.push(0);
+            });
+        }
+
+        function removeRow() {
+            // Check if there are any players
+            if (players.length === 0) {
+                alert('No players available!');
+                return;
+            }
+
+            // Check if there are any rows
+            if (players[0].scores.length === 0) {
+                alert('No rows to remove!');
+                return;
+            }
+
+            // Don't allow removing if only 1 row left
+            if (players[0].scores.length <= 1) {
+                alert('Must have at least one row!');
+                return;
+            }
+
+            // Remove last row from all players
+            players.forEach(player => {
+                player.scores.pop();
+            });
+
+            // Adjust selected row if it's now out of bounds
+            if (selectedRow !== null && selectedRow >= players[0].scores.length) {
+                selectedRow = Math.max(0, players[0].scores.length - 1);
+            }
+
+            saveToLocalStorage();
+            render();
+        }
+
+        function selectCell(playerIndex, rowIndex) {
+            selectedPlayer = playerIndex;
+            selectedRow = rowIndex;
+            currentInput = '';
+            isNegative = false;
+            render();
+        }
+
+        function inputNumber(num) {
+            if (selectedPlayer === null || selectedRow === null) return;
+
+            currentInput += num.toString();
+
+            // Update cell directly
+            let score = parseInt(currentInput || '0');
+            if (isNegative) score = -score;
+            players[selectedPlayer].scores[selectedRow] = score;
+
+            saveToLocalStorage();
+            render();
+        }
+
+        function toggleSign() {
+            isNegative = !isNegative;
+
+            // Update current cell with new sign
+            if (selectedPlayer !== null && selectedRow !== null) {
+                let score = parseInt(currentInput || '0');
+                if (isNegative) score = -score;
+                players[selectedPlayer].scores[selectedRow] = score;
+                saveToLocalStorage();
+                render();
+            }
+        }
+
+        function clearInput() {
+            currentInput = currentInput.slice(0, -1);
+            if (currentInput === '') {
+                currentInput = '';
+                isNegative = false;
+            }
+
+            // Update cell
+            if (selectedPlayer !== null && selectedRow !== null) {
+                let score = parseInt(currentInput || '0');
+                if (isNegative) score = -score;
+                players[selectedPlayer].scores[selectedRow] = score;
+                saveToLocalStorage();
+                render();
+            }
+        }
+
+        function insertShortcut(value) {
+            if (selectedPlayer === null || selectedRow === null) return;
+
+            currentInput = Math.abs(value).toString();
+            isNegative = value < 0;
+
+            let score = value;
+            players[selectedPlayer].scores[selectedRow] = score;
+
+            saveToLocalStorage();
+            moveToNextPlayer();
+            render();
+        }
+
+        function submitScore() {
+            if (selectedPlayer === null || selectedRow === null) return;
+
+            // Move to next player in same column
+            moveToNextPlayer();
+        }
+
+        function moveToNextPlayer() {
+            currentInput = '';
+            isNegative = false;
+
+            const currentRowIndex = selectedRow;
+
+            // Move to next player in the same column (row)
+            if (selectedPlayer < players.length - 1) {
+                selectedPlayer++;
+            } else {
+                // If at last player, move to first player and next row
+                selectedPlayer = 0;
+                if (selectedRow < players[0].scores.length - 1) {
+                    selectedRow++;
+                }
+            }
+
+            render();
+        }
+
+        function moveRight() {
+            if (selectedPlayer === null || selectedRow === null) return;
+
+            currentInput = '';
+            isNegative = false;
+
+            // Move to next player (column) in the same row
+            if (selectedPlayer < players.length - 1) {
+                selectedPlayer++;
+            } else {
+                // If at last player, wrap to first player
+                selectedPlayer = 0;
+                // Optionally move to next row
+                if (selectedRow < players[0].scores.length - 1) {
+                    selectedRow++;
+                }
+            }
+
+            render();
+        }
+
+        function undoLast() {
+            if (selectedPlayer === null || selectedRow === null) return;
+
+            players[selectedPlayer].scores[selectedRow] = 0;
+            currentInput = '';
+            isNegative = false;
+            saveToLocalStorage();
+            render();
+        }
+
+        function calculateTotal(playerIndex) {
+            return players[playerIndex].scores.reduce((sum, score) => sum + score, 0);
+        }
+
+        function showLeaderboard() {
+            const modal = document.getElementById('leaderboardModal');
+            const content = document.getElementById('leaderboardContent');
+
+            const sorted = players.map((player, index) => ({
+                ...player,
+                index,
+                total: calculateTotal(index)
+            })).sort((a, b) => a.total - b.total);
+
+            let html = '';
+            sorted.forEach((player, rank) => {
+                let className = 'leaderboard-item';
+                if (rank === 0) className += ' first';
+                else if (rank === 1) className += ' second';
+                else if (rank === 2) className += ' third';
+
+                html += `
+                    <div class="${className}">
+                        <span class="rank">#${rank + 1}</span>
+                        <div class="player-info">
+                            <div style="font-weight: 600; font-size: 18px;">${player.name}</div>
+                        </div>
+                        <span class="player-score">${player.total}</span>
+                    </div>
+                `;
+            });
+
+            content.innerHTML = html;
+            modal.classList.add('show');
+        }
+
+        function closeLeaderboard() {
+            document.getElementById('leaderboardModal').classList.remove('show');
+        }
+
+        function render() {
+            const table = document.getElementById('scoreTable');
+            table.innerHTML = '';
+
+            // Update row indicator
+            const rowIndicator = document.getElementById('rowIndicator');
+            const rowCount = players.length > 0 ? players[0].scores.length : 0;
+            rowIndicator.textContent = `Rows: ${rowCount}`;
+
+            players.forEach((player, playerIndex) => {
+                const column = document.createElement('div');
+                column.className = 'player-column' + (selectedPlayer === playerIndex ? ' selected' : '');
+
+                let html = `
+                    <div class="player-header">
+                        <input type="text"
+                               class="player-name"
+                               value="${player.name}"
+                               onchange="updatePlayerName(${playerIndex}, this.value)"
+                               onclick="selectedPlayer = ${playerIndex};"
+                               onfocus="this.select();">
+                    </div>
+                    <div class="scores-list">
+                `;
+
+                player.scores.forEach((score, rowIndex) => {
+                    const isActive = selectedPlayer === playerIndex && selectedRow === rowIndex;
+                    html += `
+                        <div class="score-cell ${isActive ? 'active' : ''}"
+                             onclick="selectCell(${playerIndex}, ${rowIndex})">
+                            ${score}
+                        </div>
+                    `;
+                });
+
+                html += `
+                    </div>
+                `;
+
+                column.innerHTML = html;
+                table.appendChild(column);
+            });
+
+            // Add "Add Player" button if less than 4 players
+            if (players.length < 4) {
+                const addBtn = document.createElement('div');
+                addBtn.className = 'add-player-btn';
+                addBtn.onclick = () => addPlayer();
+                addBtn.innerHTML = '<span>+</span>';
+                table.appendChild(addBtn);
+            }
+
+            // Update total scores in controls
+            const totalScoresContainer = document.getElementById('totalScores');
+            let totalScoresHTML = '';
+            players.forEach((player, playerIndex) => {
+                totalScoresHTML += `
+                    <div class="total-score-item" onclick="showLeaderboard()">
+                        <div class="total-score-name">${player.name}</div>
+                        <div class="total-score-value">${calculateTotal(playerIndex)}</div>
+                    </div>
+                `;
+            });
+            totalScoresContainer.innerHTML = totalScoresHTML;
+        }
+
+        function updatePlayerName(index, name) {
+            players[index].name = name || `Player ${index + 1}`;
+            saveToLocalStorage();
+            render();
+        }
+
+        // Mata Calculation Functions
+        function showMataCalculation() {
+            const modal = document.getElementById('mataModal');
+            const content = document.getElementById('mataContent');
+            const multiplierInput = document.getElementById('mataMultiplier');
+
+            multiplierInput.value = mataMultiplier;
+            updateMataCalculation();
+            modal.classList.add('show');
+        }
+
+        function closeMataCalculation() {
+            document.getElementById('mataModal').classList.remove('show');
+        }
+
+        function updateMataCalculation() {
+            const multiplierInput = document.getElementById('mataMultiplier');
+            mataMultiplier = parseInt(multiplierInput.value) || 200;
+            saveToLocalStorage();
+
+            const content = document.getElementById('mataContent');
+
+            // Calculate total for each player
+            const playerTotals = players.map((player, index) => ({
+                name: player.name,
+                index: index,
+                total: calculateTotal(index)
+            }));
+
+            // Calculate points based on head-to-head comparison
+            const calculations = playerTotals.map((player, i) => {
+                let points = 0;
+                let details = [];
+
+                playerTotals.forEach((opponent, j) => {
+                    if (i !== j) {
+                        const diff = opponent.total - player.total;
+                        points += diff;
+                        details.push(`(${opponent.name}: ${opponent.total} - ${player.name}: ${player.total}) = ${diff}`);
+                    }
+                });
+
+                const finalScore = points * mataMultiplier;
+
+                return {
+                    name: player.name,
+                    total: player.total,
+                    points: points,
+                    finalScore: finalScore,
+                    details: details
+                };
+            });
+
+            // Sort by final score descending
+            calculations.sort((a, b) => b.finalScore - a.finalScore);
+
+            let html = '<div style="max-height: 60vh; overflow-y: auto;">';
+
+            calculations.forEach((calc, rank) => {
+                html += `
+                    <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div>
+                                <span style="font-size: 20px; font-weight: 700;">#${rank + 1}) ${calc.name}</span>
+                                <div style="font-size: 12px; opacity: 0.7; margin-top: 4px;">Total Akumulasi: ${calc.total}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 24px; font-weight: 700; color: ${calc.finalScore >= 0 ? '#4a9eff' : '#ff6b6b'};">
+                                    ${calc.finalScore >= 0 ? '+' : ''}${calc.finalScore.toLocaleString()}
+                                </div>
+                                <div style="font-size: 12px; opacity: 0.7;">${calc.points} × ${mataMultiplier}</div>
+                            </div>
+                        </div>
+                        <div style="font-size: 11px; opacity: 0.6; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+                            <div style="margin-bottom: 4px;"><strong>Perhitungan:</strong></div>
+                            ${calc.details.map(d => `<div>• ${d}</div>`).join('')}
+                            <div style="margin-top: 6px;"><strong>Total Points: ${calc.points}</strong></div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            content.innerHTML = html;
+        }
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+
+            if (e.key >= '0' && e.key <= '9') {
+                inputNumber(parseInt(e.key));
+            } else if (e.key === 'Enter') {
+                submitScore();
+            } else if (e.key === 'Backspace') {
+                e.preventDefault();
+                clearInput();
+            } else if (e.key === 'ArrowUp' && selectedRow > 0) {
+                selectedRow--;
+                render();
+            } else if (e.key === 'ArrowDown' && selectedRow < players[selectedPlayer].scores.length - 1) {
+                selectedRow++;
+                render();
+            } else if (e.key === 'ArrowLeft' && selectedPlayer > 0) {
+                selectedPlayer--;
+                render();
+            } else if (e.key === 'ArrowRight' && selectedPlayer < players.length - 1) {
+                selectedPlayer++;
+                render();
+            } else if (e.key === '-' || e.key === '+') {
+                toggleSign();
+            }
+        });
+
+        // Install Banner Functions
+        let deferredPrompt = null;
+        let userLanguage = navigator.language.toLowerCase().includes('id') ? 'id' : 'en';
+
+        const translations = {
+            id: {
+                bannerTitle: 'Install ScoreKeeper',
+                bannerDesc: 'Tambahkan ke Layar Utama untuk akses cepat dan penggunaan offline',
+                buttonText: 'Cara Install',
+                modalTitle: 'Cara Install ScoreKeeper',
+                iosInstructions: `
+                    <h3 style="color: #4a9eff; margin-top: 0;">📱 iPhone/iPad (Safari)</h3>
+                    <ol style="padding-left: 20px;">
+                        <li>Tap tombol <strong>Share</strong> (kotak dengan anak panah ke atas) di bagian bawah browser</li>
+                        <li>Scroll ke bawah dan tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Tap <strong>"Add"</strong> di pojok kanan atas</li>
+                        <li>Icon ScoreKeeper akan muncul di layar utama Anda!</li>
+                    </ol>
+                `,
+                androidInstructions: `
+                    <h3 style="color: #4a9eff; margin-top: 20px;">🤖 Android (Chrome)</h3>
+                    <ol style="padding-left: 20px;">
+                        <li>Tap tombol menu <strong>(⋮)</strong> di pojok kanan atas browser</li>
+                        <li>Pilih <strong>"Add to Home screen"</strong> atau <strong>"Install app"</strong></li>
+                        <li>Tap <strong>"Add"</strong> atau <strong>"Install"</strong></li>
+                        <li>Icon ScoreKeeper akan muncul di layar utama Anda!</li>
+                    </ol>
+                `
+            },
+            en: {
+                bannerTitle: 'Install ScoreKeeper',
+                bannerDesc: 'Add to Home Screen for quick access and offline use',
+                buttonText: 'How to Install',
+                modalTitle: 'How to Install ScoreKeeper',
+                iosInstructions: `
+                    <h3 style="color: #4a9eff; margin-top: 0;">📱 iPhone/iPad (Safari)</h3>
+                    <ol style="padding-left: 20px;">
+                        <li>Tap the <strong>Share button</strong> (box with arrow pointing up) at the bottom of the browser</li>
+                        <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
+                        <li>Tap <strong>"Add"</strong> in the top right corner</li>
+                        <li>ScoreKeeper icon will appear on your home screen!</li>
+                    </ol>
+                `,
+                androidInstructions: `
+                    <h3 style="color: #4a9eff; margin-top: 20px;">🤖 Android (Chrome)</h3>
+                    <ol style="padding-left: 20px;">
+                        <li>Tap the menu button <strong>(⋮)</strong> in the top right corner</li>
+                        <li>Select <strong>"Add to Home screen"</strong> or <strong>"Install app"</strong></li>
+                        <li>Tap <strong>"Add"</strong> or <strong>"Install"</strong></li>
+                        <li>ScoreKeeper icon will appear on your home screen!</li>
+                    </ol>
+                `
+            }
+        };
+
+        function showInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            const dismissed = localStorage.getItem('installBannerDismissed');
+            const showCount = parseInt(localStorage.getItem('installBannerShowCount') || '0');
+            const visitCount = parseInt(localStorage.getItem('appVisitCount') || '0');
+
+            // Don't show if:
+            // 1. Already dismissed permanently
+            // 2. Already installed as PWA
+            // 3. Shown more than 3 times
+            // 4. User visited less than 2 times (wait until 2nd visit)
+            if (dismissed === 'true' ||
+                window.matchMedia('(display-mode: standalone)').matches ||
+                showCount >= 3 ||
+                visitCount < 2) {
+                return;
+            }
+
+            // Update text based on language
+            const lang = translations[userLanguage];
+            document.getElementById('installTitle').textContent = lang.bannerTitle;
+            document.getElementById('installDesc').textContent = lang.bannerDesc;
+            document.getElementById('installButton').textContent = lang.buttonText;
+
+            // Increment show count
+            localStorage.setItem('installBannerShowCount', (showCount + 1).toString());
+
+            banner.classList.add('show');
+
+            // Auto-hide after 10 seconds if not interacted
+            setTimeout(() => {
+                if (banner.classList.contains('show')) {
+                    banner.classList.remove('show');
+                }
+            }, 10000);
+        }
+
+        function dismissInstallBanner() {
+            const banner = document.getElementById('installBanner');
+            banner.classList.remove('show');
+            localStorage.setItem('installBannerDismissed', 'true');
+        }
+
+        function showInstallInstructions() {
+            const modal = document.getElementById('installModal');
+            const instructions = document.getElementById('installInstructions');
+            const title = document.getElementById('installModalTitle');
+            const lang = translations[userLanguage];
+
+            title.textContent = lang.modalTitle;
+            instructions.innerHTML = lang.iosInstructions + lang.androidInstructions;
+
+            modal.classList.add('show');
+        }
+
+        function closeInstallModal() {
+            document.getElementById('installModal').classList.remove('show');
+        }
+
+        // Track visit count
+        function incrementVisitCount() {
+            const visitCount = parseInt(localStorage.getItem('appVisitCount') || '0');
+            localStorage.setItem('appVisitCount', (visitCount + 1).toString());
+        }
+
+        // Increment visit count on load
+        incrementVisitCount();
+
+        // Check if PWA and show banner after delay
+        setTimeout(() => {
+            if (!window.matchMedia('(display-mode: standalone)').matches) {
+                showInstallBanner();
+            }
+        }, 5000); // Show after 5 seconds
+
+        // Room Functions
+        function showRoomModal() {
+            const modal = document.getElementById('roomModal');
+            if (currentRoomCode) {
+                document.getElementById('currentRoomInfo').style.display = 'block';
+                document.getElementById('currentRoomCode').textContent = currentRoomCode;
+            } else {
+                document.getElementById('currentRoomInfo').style.display = 'none';
+            }
+            showRoomMenuView();
+            modal.classList.add('show');
+        }
+
+        function closeRoomModal() {
+            document.getElementById('roomModal').classList.remove('show');
+        }
+
+        function showRoomMenuView() {
+            document.getElementById('roomMenuView').style.display = 'block';
+            document.getElementById('joinRoomView').style.display = 'none';
+            document.getElementById('creatingRoomView').style.display = 'none';
+        }
+
+        function showJoinRoomView() {
+            document.getElementById('roomMenuView').style.display = 'none';
+            document.getElementById('joinRoomView').style.display = 'block';
+            document.getElementById('roomCodeInput').value = '';
+            document.getElementById('roomCodeInput').focus();
+        }
+
+        async function createRoom() {
+            document.getElementById('roomMenuView').style.display = 'none';
+            document.getElementById('creatingRoomView').style.display = 'block';
+
+            try {
+                const response = await fetch(`${API_BASE}/room`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ players: players })
+                });
+
+                if (!response.ok) throw new Error('Failed to create room');
+
+                const data = await response.json();
+                currentRoomCode = data.roomCode;
+
+                document.getElementById('roomStatus').style.display = 'flex';
+                document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
+                document.getElementById('currentRoomCode').textContent = currentRoomCode;
+                document.getElementById('currentRoomInfo').style.display = 'block';
+
+                saveToLocalStorage();
+                showRoomMenuView();
+                startRoomSync();
+
+                alert(`Room berhasil dibuat!\n\nKode Room: ${currentRoomCode}\n\nBagikan kode ini ke pemain lain.`);
+            } catch (error) {
+                console.error('Create room error:', error);
+                alert('Gagal membuat room. Pastikan Anda sudah deploy Cloudflare Worker.');
+                showRoomMenuView();
+            }
+        }
+
+        async function joinRoom() {
+            const roomCode = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+
+            if (roomCode.length !== 4) {
+                alert('Kode room harus 4 huruf!');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/room/${roomCode}`);
+
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        alert('Room tidak ditemukan! Periksa kembali kode room.');
+                    } else {
+                        throw new Error('Failed to join room');
+                    }
+                    return;
+                }
+
+                const data = await response.json();
+                players = data.players;
+                currentRoomCode = roomCode;
+
+                document.getElementById('roomStatus').style.display = 'flex';
+                document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
+                document.getElementById('currentRoomCode').textContent = currentRoomCode;
+                document.getElementById('currentRoomInfo').style.display = 'block';
+
+                saveToLocalStorage();
+                render();
+                closeRoomModal();
+                startRoomSync();
+
+                alert(`Berhasil join room: ${roomCode}`);
+            } catch (error) {
+                console.error('Join room error:', error);
+                alert('Gagal join room. Coba lagi nanti.');
+            }
+        }
+
+        function leaveRoom() {
+            if (confirm('Yakin ingin keluar dari room? Data lokal Anda akan tetap tersimpan.')) {
+                stopRoomSync();
+                currentRoomCode = null;
+
+                document.getElementById('roomStatus').style.display = 'none';
+                document.getElementById('currentRoomInfo').style.display = 'none';
+
+                saveToLocalStorage();
+                closeRoomModal();
+
+                alert('Anda telah keluar dari room.');
+            }
+        }
+
+        function shareRoom() {
+            if (!currentRoomCode) return;
+
+            const shareUrl = `${window.location.origin}?room=${currentRoomCode}`;
+            const shareText = `Join ScoreKeeper room dengan kode: ${currentRoomCode}\n\n${shareUrl}`;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ScoreKeeper Room',
+                    text: shareText,
+                }).catch(err => console.log('Share cancelled'));
+            } else {
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert('Link room telah dicopy ke clipboard!');
+                }).catch(() => {
+                    alert(`Bagikan kode ini:\n\n${currentRoomCode}\n\nAtau link:\n${shareUrl}`);
+                });
+            }
+        }
+
+        async function syncToRoom() {
+            if (!currentRoomCode) return;
+
+            try {
+                await fetch(`${API_BASE}/room/${currentRoomCode}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ players: players })
+                });
+            } catch (error) {
+                console.error('Sync to room error:', error);
+            }
+        }
+
+        async function syncFromRoom() {
+            if (!currentRoomCode) return;
+
+            try {
+                const response = await fetch(`${API_BASE}/room/${currentRoomCode}`);
+
+                if (!response.ok) return;
+
+                const data = await response.json();
+
+                if (data.lastUpdate && data.lastUpdate > lastSyncTime) {
+                    players = data.players;
+                    lastSyncTime = data.lastUpdate;
+                    render();
+                }
+            } catch (error) {
+                console.error('Sync from room error:', error);
+            }
+        }
+
+        function startRoomSync() {
+            if (syncInterval) return;
+            syncInterval = setInterval(() => {
+                syncFromRoom();
+            }, 3000);
+        }
+
+        function stopRoomSync() {
+            if (syncInterval) {
+                clearInterval(syncInterval);
+                syncInterval = null;
+            }
+        }
+
+        function checkUrlForRoomCode() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const roomCode = urlParams.get('room');
+
+            if (roomCode && roomCode.length === 4 && !currentRoomCode) {
+                setTimeout(() => {
+                    if (confirm(`Join room ${roomCode}?`)) {
+                        document.getElementById('roomCodeInput').value = roomCode;
+                        joinRoom();
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateRoomUI() {
+            if (currentRoomCode) {
+                document.getElementById('roomStatus').style.display = 'flex';
+                document.getElementById('roomCodeDisplay').textContent = currentRoomCode;
+                startRoomSync();
+            }
+        }
+
+        // Initialize the app
+        init();
+
+        // Check for room code in URL
+        checkUrlForRoomCode();
+
+        // Update room UI if already in a room
+        updateRoomUI();
+
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                .then(reg => {
+                    console.log('Service Worker registered', reg);
+                    // Check for updates
+                    reg.update();
+                })
+                .catch(err => console.log('Service Worker registration failed', err));
+        }
+    </script>
+</body>
+</html>

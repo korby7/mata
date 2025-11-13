@@ -1,0 +1,82 @@
+════════════════════════════════════════════════════════
+  📱 SCOREKEEPER - ROOM SHARING SETUP (5 MENIT)
+════════════════════════════════════════════════════════
+
+✅ LANGKAH 1: BUAT KV NAMESPACE
+--------------------------------------------------------------
+1. Buka: https://dash.cloudflare.com
+2. Workers & Pages → KV
+3. Create namespace → Nama: ROOM_KV
+4. Copy Namespace ID yang muncul
+
+✅ LANGKAH 2: BIND KV KE PROJECT
+--------------------------------------------------------------
+1. Workers & Pages → Pilih project ScoreKeeper
+2. Settings → Functions
+3. KV namespace bindings → Add binding
+4. Variable name: ROOM_KV
+5. KV namespace: Pilih ROOM_KV
+6. Save
+
+✅ LANGKAH 3: DEPLOY FILES
+--------------------------------------------------------------
+Upload file baru ini:
+📁 functions/api/[[path]].js
+
+File lainnya (update):
+📄 index.html (sudah diupdate dengan room feature)
+
+✅ LANGKAH 4: TEST!
+--------------------------------------------------------------
+HP 1:
+1. Buka website
+2. Klik 🔗 Room
+3. Buat Room Baru
+4. Dapat kode (misal: ABCD)
+
+HP 2:
+1. Buka website
+2. Klik 🔗 Room
+3. Join Room
+4. Masukkan kode: ABCD
+
+✨ DONE! Sekarang score sync real-time!
+
+════════════════════════════════════════════════════════
+  🎮 CARA PAKAI
+════════════════════════════════════════════════════════
+
+CREATE ROOM:
+→ Klik 🔗 Room
+→ Klik "Buat Room Baru"
+→ Dapat kode 4 huruf
+→ Bagikan ke teman
+
+JOIN ROOM:
+→ Klik 🔗 Room
+→ Klik "Join Room"
+→ Masukkan kode 4 huruf
+→ Done!
+
+SHARE:
+→ Klik 🔗 Room
+→ Klik "📋 Copy Link"
+→ Kirim link ke teman
+→ Teman buka link → langsung bisa join!
+
+KELUAR:
+→ Klik 🔗 Room
+→ Klik "🚪 Keluar Room"
+
+════════════════════════════════════════════════════════
+  ⚠️ PENTING
+════════════════════════════════════════════════════════
+
+• Room otomatis expire setelah 24 JAM
+• Data lokal TETAP tersimpan walau room hilang
+• Sync otomatis setiap 3 detik
+• Gratis sampai 100,000 requests/day
+
+════════════════════════════════════════════════════════
+
+Butuh bantuan? Lihat SETUP_ROOM.md untuk detail lengkap!
