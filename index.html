@@ -1927,7 +1927,7 @@
             if (syncInterval) return;
             syncInterval = setInterval(() => {
                 syncFromRoom();
-            }, 3000);
+            }, 1000); // Sync every 1 second for near real-time updates
         }
 
         function stopRoomSync() {
