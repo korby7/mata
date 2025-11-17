@@ -31,8 +31,8 @@ self.addEventListener('fetch', event => {
           return response;
         }
         return fetch(event.request).then(response => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type !== 'basic') {
+          // Don't cache non-successful responses or non-GET requests
+          if (!response || response.status !== 200 || response.type !== 'basic' || event.request.method !== 'GET') {
             return response;
           }
           const responseToCache = response.clone();

@@ -26,7 +26,13 @@ export async function onRequestGet(context) {
   }
 
   return new Response(roomData, {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
   });
 }
 
@@ -71,7 +77,11 @@ export async function onRequestPut(context) {
   );
 
   return new Response(JSON.stringify(roomData), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    headers: {
+      ...corsHeaders,
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    }
   });
 }
 
